@@ -1,0 +1,3 @@
+[submodule "BiddingManagement"]
+	path = BiddingManagement
+	url = https://github.com/21-2-1team/mgmt.git
