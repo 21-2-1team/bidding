@@ -205,9 +205,10 @@ mvn spring-boot:run
 
 cd gateway
 mvn spring-boot:run
+```
 
 ## DDD 의 적용
-```
+
 - 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (아래 예시는 입찰관리 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다.
 
 ```
@@ -232,6 +233,7 @@ public class BiddingManagement {
     private String bizInfo;
     private String qualifications;
     private String succBidderNm;
+    private String phoneNumber;
 
     @PostPersist
     public void onPostPersist(){
@@ -318,6 +320,15 @@ public class BiddingManagement {
     public void setSuccBidderNm(String succBidderNm) {
         this.succBidderNm = succBidderNm;
     }
+    
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
 }
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
@@ -329,23 +340,26 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 @RepositoryRestResource(collectionResourceRel="biddingManagements", path="biddingManagements")
 public interface BiddingManagementRepository extends PagingAndSortingRepository<BiddingManagement, Long>{
+
+    BiddingManagement findByNoticeNo(String noticeNo);
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# 입찰관리 서비스의 입찰공고 등록
-http localhost:8081/biddingManagements noticeNo=no01 title=title1
+![image](https://user-images.githubusercontent.com/84000959/122253612-47b99f00-cf07-11eb-85c1-bc9736d97ec9.png)
 
-# 입찰참여 서비스의 입찰서 등록
-http POST localhost:8082/biddingParticipations noticeNo=n02 participateNo=p02 companyNo=c02
+![image](https://user-images.githubusercontent.com/84000959/122253640-5011da00-cf07-11eb-8b8d-b954879ab902.png)
 
-# 입찰심사 서비스의 심사결과 등록
-http POST localhost:8083/biddingExaminations noticeNo=n02 participateNo=p02 successBidderFlag=true
+![image](https://user-images.githubusercontent.com/84000959/122253676-586a1500-cf07-11eb-8d1a-7b7b966a27bf.png)
 
-# 입찰공고, 입찰참여, 입찰심사 등록 결과 확인
-http GET localhost:8081/biddingManagements/1
-http GET localhost:8082/biddingParticipations/2
-http GET localhost:8083/biddingExaminations/1
+![image](https://user-images.githubusercontent.com/84000959/122253698-5ef88c80-cf07-11eb-8b40-5ae0ccbbd91e.png)
+
+![image](https://user-images.githubusercontent.com/84000959/122253729-66b83100-cf07-11eb-8d38-bfb30aabfa7e.png)
+
+![image](https://user-images.githubusercontent.com/84000959/122253779-720b5c80-cf07-11eb-88c7-8e6c687c63a3.png)
+
+![image](https://user-images.githubusercontent.com/84000959/122253810-79cb0100-cf07-11eb-8557-fad7d460bd75.png)
+
 ```
 
 ## 폴리글랏 퍼시스턴스
@@ -370,16 +384,17 @@ Notification(문자알림) 서비스는 문자알림 이력이 많이 쌓일 수
 
 ```
 # (BiddingExamination) BiddingManagementService.java
-
 package bidding.external;
 
-@FeignClient(name="BiddingManagement", url="http://localhost:8081")//, fallback = BiddingManagementServiceFallback.class)
+@FeignClient(name="BiddingManagement", url="http://localhost:8081")
 public interface BiddingManagementService {
 
-    @RequestMapping(method= RequestMethod.PATCH, path="/biddingManagements")
-    public void registSucessBidder(@RequestBody BiddingManagement biddingManagement);
+    @RequestMapping(method= RequestMethod.GET, path="/biddingManagements/registSucessBidder")
+    public boolean registSucessBidder(@RequestParam("noticeNo") String noticeNo,
+    @RequestParam("succBidderNm") String succBidderNm, @RequestParam("phoneNumber") String phoneNumber);
 
 }
+
 ```
 
 - 심사결과가 등록된 직후(@PostUpdate) 낙찰자정보 등록을 요청하도록 처리 (낙찰자가 아닌 경우, 이후 로직 스킵)
@@ -391,15 +406,19 @@ public interface BiddingManagementService {
         // 낙찰업체가 아니면 Skip.
         if(getSuccessBidderFlag() == false) return;
 
-        bidding.external.BiddingManagement biddingManagement = new bidding.external.BiddingManagement();
-        biddingManagement.setNoticeNo(getNoticeNo());
-        biddingManagement.setSuccBidderNm(getCompanyNm());
-        biddingManagement.setPhoneNumber(getPhoneNumber());
+        try{
+            // mappings goes here
+            boolean isUpdated = BiddingExaminationApplication.applicationContext.getBean(bidding.external.BiddingManagementService.class)
+            .registSucessBidder(getNoticeNo(), getCompanyNm(), getPhoneNumber());
 
-        // mappings goes here
-        BiddingExaminationApplication.applicationContext.getBean(bidding.external.BiddingManagementService.class)
-            .registSucessBidder(biddingManagement);
-    }
+            if(isUpdated == false){
+                throw new Exception("입찰관리 서비스의 입찰공고에 낙찰자 정보가 갱신되지 않음");
+            }
+        }catch(java.net.ConnectException ce){
+            throw new Exception("입찰관리 서비스 연결 실패");
+        }catch(Exception e){
+            throw new Exception("입찰관리 서비스 처리 실패");
+        }
 ```
 
 - 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 입찰관리 시스템이 장애가 나면 입찰심사 등록도 못 한다는 것을 확인:
@@ -409,14 +428,14 @@ public interface BiddingManagementService {
 # 입찰관리(BiddingManagement) 서비스를 잠시 내려놓음 (ctrl+c)
 
 #심사결과 등록 : Fail
-http POST localhost:8083/biddingExaminations noticeNo=n22 participateNo=p22 successBidderFlag=true
+http PATCH http://localhost:8083/biddingExaminations/1 noticeNo=n01 participateNo=p01 successBidderFlag=true
 
 #입찰관리 서비스 재기동
 cd BiddingManagement
 mvn spring-boot:run
 
 #심사결과 등록 : Success
-http POST localhost:8083/biddingExaminations noticeNo=n22 participateNo=p22 successBidderFlag=true
+http PATCH http://localhost:8083/biddingExaminations/1 noticeNo=n01 participateNo=p01 successBidderFlag=true
 ```
 
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -455,8 +474,6 @@ public class PolicyHandler{
 
         if(!noticeRegistered.validate()) return;
 
-        System.out.println("\n\n##### listener RecieveBiddingNotice : " + noticeRegistered.toJson() + "\n\n");
- 
         if(noticeRegistered.isMe()){
             BiddingParticipation biddingParticipation = new BiddingParticipation();
             biddingParticipation.setNoticeNo(noticeRegistered.getNoticeNo());
@@ -478,10 +495,7 @@ public class PolicyHandler{
 
         if(!noticeCanceled.validate()) return;
 
-        System.out.println("\n\n##### listener CancelBiddingParticipation : " + noticeCanceled.toJson() + "\n\n");
-
         if(noticeCanceled.isMe()){
-            // ToDo..
             BiddingParticipation biddingParticipation = biddingParticipationRepository.findByNoticeNo(noticeCanceled.getNoticeNo());
             biddingParticipationRepository.delete(biddingParticipation);
         }
@@ -490,26 +504,26 @@ public class PolicyHandler{
 
 ```
 
-입찰관리, 입찰참여 시스템은 입찰심사 시스템과 완전히 분리되어 있으며, 이벤트 수신에 따라 처리되기 때문에, 입찰심사 시스템이 유지보수로 인해 잠시 내려간 상태라도 서비스에 영향이 없다:
+입찰관리, 입찰참여 시스템은 입찰심사 시스템과 완전히 분리되어 있으며, 이벤트 수신에 따라 처리되기 때문에, 입찰심사 시스템이 유지보수로 인해 잠시 내려간 상태라도 입찰관리, 입찰참여 서비스에 영향이 없다:
 ```
 # 입찰심사 서비스 (BiddingExamination) 를 잠시 내려놓음 (ctrl+c)
 
 #입찰공고 등록 : Success
 http POST localhost:8081/biddingManagements noticeNo=n33 title=title33
 #입찰참여 등록 : Success
-http POST localhost:8082/biddingParticipations noticeNo=n33 participateNo=p33 companyNo=c33
+http PATCH http://localhost:8082/biddingParticipations/2 noticeNo=n33 participateNo=p33 companyNo=c33 companyNm=doremi33 phoneNumber=010-1234-1234
 
 #입찰관리에서 낙찰업체명 갱신 여부 확인
-http localhost:8081/biddingManagements     # 낙찰업체명 갱신 안 됨 확인
+http localhost:8081/biddingManagements/2     # 낙찰업체명 갱신 안 됨 확인
 
 #입찰심사 서비스 기동
 cd BiddingExamination
 mvn spring-boot:run
 
 #심사결과 등록 : Success
-http POST localhost:8083/biddingExaminations noticeNo=n33 participateNo=p33 successBidderFlag=true
+http PATCH http://localhost:8083/biddingExaminations/2 noticeNo=n33 participateNo=p33 successBidderFlag=true
 
 #입찰관리에서 낙찰업체명 갱신 여부 확인
-http localhost:8081/biddingManagements     # 낙찰업체명 갱신됨 확인
+http localhost:8081/biddingManagements/2     # 낙찰업체명 갱신됨 확인
 
 ```
