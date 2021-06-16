@@ -384,22 +384,15 @@ public interface BiddingManagementService {
 }
 ```
 
-- 심사결과가 등록된 직후(@PostPersist) 낙찰자정보 등록을 요청하도록 처리
+- 심사결과가 등록된 직후(@PostUpdate) 낙찰자정보 등록을 요청하도록 처리 (낙찰자가 아닌 경우, 이후 로직 스킵)
 ```
 # BiddingExamination.java (Entity)
 
-    @PostPersist
-    public void onPostPersist(){
-
-        fooddelivery.external.결제이력 pay = new fooddelivery.external.결제이력();
-        pay.setOrderId(getOrderId());
-        
-        Application.applicationContext.getBean(fooddelivery.external.결제이력Service.class)
-                .결제(pay);
-    }
-    
     @PostUpdate
     public void onPostUpdate(){
+        // 낙찰업체가 아니면 Skip.
+        if(getSuccessBidderFlag() == false) return;
+
         bidding.external.BiddingManagement biddingManagement = new bidding.external.BiddingManagement();
         biddingManagement.setNoticeNo(getNoticeNo());
         biddingManagement.setSuccBidderNm(getCompanyNm());
@@ -408,7 +401,6 @@ public interface BiddingManagementService {
         // mappings goes here
         BiddingExaminationApplication.applicationContext.getBean(bidding.external.BiddingManagementService.class)
             .registSucessBidder(biddingManagement);
-
     }
 ```
 
