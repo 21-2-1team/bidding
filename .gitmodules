@@ -1,3 +1,6 @@
 [submodule "BiddingManagement"]
 	path = BiddingManagement
 	url = https://github.com/21-2-1team/mgmt.git
+[submodule "BiddingExamination"]
+	path = BiddingExamination
+	url = https://github.com/21-2-1team/exam.git
