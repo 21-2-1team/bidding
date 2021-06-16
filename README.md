@@ -115,15 +115,13 @@
 
 ### 폴리시 부착, 이동 및 컨텍스트 매핑(점선은 Pub/Sub, 실선은 Req/Resp)
 
-![8  폴리시 부착, 이동 및 컨텍스트 매핑](https://user-images.githubusercontent.com/84000922/122162417-8111f080-ceae-11eb-8b7d-12e4362ea464.png)
-
+![image](https://user-images.githubusercontent.com/84000959/122225382-fc47c680-ceef-11eb-859f-70c06e195310.png)
 
 
 
 ### 완성된 1차 모형
 
-![9  완성된 1차 모형](https://user-images.githubusercontent.com/84000922/122162419-81aa8700-ceae-11eb-95cb-183ad9e5706f.png)
-
+![image](https://user-images.githubusercontent.com/84000959/122225301-e76b3300-ceef-11eb-8263-847226aba7a6.png)
 
 
 
