@@ -382,13 +382,13 @@ Notification(문자알림) 서비스는 문자알림 이력이 많이 쌓일 수
 ![image](https://user-images.githubusercontent.com/84000959/122328060-e7a81480-cf69-11eb-9955-954f88b7ec1b.png)
 
 - 입찰관리, 입찰참여, 입찰심사 등 나머지 서비스는 H2 DB를 사용한다.
-...
+```
 <dependency>
 	<groupId>com.h2database</groupId>
 	<artifactId>h2</artifactId>
 	<scope>runtime</scope>
 </dependency>
-...
+```
 
 ## 동기식 호출 과 Fallback 처리
 
