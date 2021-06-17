@@ -354,6 +354,8 @@ public interface BiddingManagementRepository extends PagingAndSortingRepository<
 
 ![image](https://user-images.githubusercontent.com/84000959/122253698-5ef88c80-cf07-11eb-8b40-5ae0ccbbd91e.png)
 
+![image](https://user-images.githubusercontent.com/84000959/122327901-9f88f200-cf69-11eb-8aa7-3edffac01e7a.png)
+
 ![image](https://user-images.githubusercontent.com/84000959/122253729-66b83100-cf07-11eb-8d38-bfb30aabfa7e.png)
 
 ![image](https://user-images.githubusercontent.com/84000959/122253779-720b5c80-cf07-11eb-88c7-8e6c687c63a3.png)
@@ -368,12 +370,14 @@ Notification(문자알림) 서비스는 문자알림 이력이 많이 쌓일 수
 
 ```
 # pom.xml
-		<dependency>
-			<groupId>org.hsqldb</groupId>
-    		<artifactId>hsqldb</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+<dependency>
+	<groupId>org.hsqldb</groupId>
+    	<artifactId>hsqldb</artifactId>
+	<scope>runtime</scope>
+</dependency>
+
 ```
+![image](https://user-images.githubusercontent.com/84000959/122328060-e7a81480-cf69-11eb-9955-954f88b7ec1b.png)
 
 
 ## 동기식 호출 과 Fallback 처리
