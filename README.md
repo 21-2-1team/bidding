@@ -362,6 +362,7 @@ public interface BiddingManagementRepository extends PagingAndSortingRepository<
 
 ![image](https://user-images.githubusercontent.com/84000959/122253810-79cb0100-cf07-11eb-8557-fad7d460bd75.png)
 
+![image](https://user-images.githubusercontent.com/84000959/122331399-b5011a80-cf6f-11eb-8cdc-27bd84ef5cfd.png)
 
 
 ## 폴리글랏 퍼시스턴스
